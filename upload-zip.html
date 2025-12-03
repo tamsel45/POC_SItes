@@ -258,18 +258,27 @@
             uploadArea.classList.remove('dragover');
             
             const file = e.dataTransfer.files[0];
-            if (file && file.name.endsWith('.zip')) {
+            if (file && isValidZipFile(file)) {
                 handleFile(file);
             } else {
                 showMessage('Please select a valid zip file', 'error');
             }
         });
 
+        // Validate zip file by extension and MIME type
+        function isValidZipFile(file) {
+            const validExtension = file.name.endsWith('.zip');
+            const validMimeType = file.type === 'application/zip' || 
+                                   file.type === 'application/x-zip-compressed' ||
+                                   file.type === 'application/x-zip';
+            return validExtension && (validMimeType || file.type === '');
+        }
+
         // Handle file selection
         function handleFile(file) {
             if (!file) return;
 
-            if (!file.name.endsWith('.zip')) {
+            if (!isValidZipFile(file)) {
                 showMessage('Please select a valid zip file', 'error');
                 return;
             }
@@ -295,17 +304,15 @@
         uploadBtn.addEventListener('click', () => {
             if (!selectedFile) return;
 
-            // Simulate upload (in a real app, you'd send this to a server)
+            // Simulate upload process
+            // In a real implementation, use FormData to send the file to a server:
+            // const formData = new FormData();
+            // formData.append('file', selectedFile);
+            // await fetch('/upload', { method: 'POST', body: formData });
             uploadBtn.disabled = true;
             uploadBtn.textContent = 'Uploading...';
 
-            // Create a download link for the file (simulating upload by downloading)
             setTimeout(() => {
-                const url = URL.createObjectURL(selectedFile);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = selectedFile.name;
-                
                 showMessage(`✓ File "${selectedFile.name}" is ready! In a real implementation, this would be uploaded to a server.`, 'success');
                 uploadBtn.disabled = false;
                 uploadBtn.textContent = 'Upload File';
