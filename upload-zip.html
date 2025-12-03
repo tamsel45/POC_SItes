@@ -273,12 +273,12 @@
                 'application/x-zip-compressed',
                 'application/x-zip'
             ];
-            // Require MIME type validation for better security
-            // Some browsers may not set MIME type, so we check both conditions
-            const hasMimeType = file.type !== '';
             const validMimeType = validMimeTypes.includes(file.type);
             
-            return validExtension && (!hasMimeType || validMimeType);
+            // For better security, we require both valid extension AND MIME type
+            // Note: Some legitimate file inputs may have empty MIME types depending on browser/OS
+            // If this is too restrictive, consider logging files with empty MIME types for review
+            return validExtension && validMimeType;
         }
 
         // Handle file selection
@@ -291,9 +291,8 @@
             }
 
             selectedFile = file;
-            // Sanitize filename to prevent XSS
-            const safeFileName = file.name.replace(/[<>]/g, '');
-            fileName.textContent = `📦 ${safeFileName}`;
+            // Using textContent prevents XSS by treating content as plain text
+            fileName.textContent = `📦 ${file.name}`;
             fileSize.textContent = `Size: ${formatFileSize(file.size)}`;
             fileInfo.classList.add('active');
             uploadBtn.disabled = false;
@@ -322,9 +321,8 @@
             uploadBtn.textContent = 'Uploading...';
 
             setTimeout(() => {
-                // Sanitize filename to prevent XSS in message
-                const safeFileName = selectedFile.name.replace(/[<>]/g, '');
-                showMessage(`✓ File "${safeFileName}" is ready! In a real implementation, this would be uploaded to a server.`, 'success');
+                // Using textContent in showMessage prevents XSS
+                showMessage(`✓ File "${selectedFile.name}" is ready! In a real implementation, this would be uploaded to a server.`, 'success');
                 uploadBtn.disabled = false;
                 uploadBtn.textContent = 'Upload File';
             }, 1000);
