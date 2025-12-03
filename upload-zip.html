@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Zip File</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px 30px;
+            max-width: 500px;
+            width: 100%;
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .upload-area {
+            border: 3px dashed #667eea;
+            border-radius: 15px;
+            padding: 40px 20px;
+            text-align: center;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 20px;
+        }
+
+        .upload-area:hover {
+            border-color: #764ba2;
+            background: #f0f2ff;
+        }
+
+        .upload-area.dragover {
+            border-color: #764ba2;
+            background: #e8ebff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 60px;
+            margin-bottom: 15px;
+        }
+
+        .upload-text {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 5px;
+            font-size: 18px;
+        }
+
+        .upload-hint {
+            color: #999;
+            font-size: 14px;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-info {
+            background: #f0f2ff;
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .file-info.active {
+            display: block;
+        }
+
+        .file-name {
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 5px;
+            word-break: break-all;
+        }
+
+        .file-size {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        button {
+            flex: 1;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .upload-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .upload-btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .clear-btn {
+            background: #f1f3f4;
+            color: #666;
+        }
+
+        .clear-btn:hover {
+            background: #e8eaed;
+        }
+
+        .message {
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+            text-align: center;
+            font-weight: 500;
+            display: none;
+        }
+
+        .message.success {
+            background: #d4edda;
+            color: #155724;
+            display: block;
+        }
+
+        .message.error {
+            background: #f8d7da;
+            color: #721c24;
+            display: block;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 30px 20px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .upload-area {
+                padding: 30px 15px;
+            }
+
+            .upload-icon {
+                font-size: 50px;
+            }
+
+            button {
+                padding: 12px 20px;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📦 Upload Zip File</h1>
+        <p class="subtitle">Select or drag a zip file from your device</p>
+
+        <div class="upload-area" id="uploadArea">
+            <div class="upload-icon">📁</div>
+            <div class="upload-text">Tap to select a file</div>
+            <div class="upload-hint">or drag and drop here</div>
+            <input type="file" id="fileInput" accept=".zip,application/zip,application/x-zip-compressed">
+        </div>
+
+        <div class="file-info" id="fileInfo">
+            <div class="file-name" id="fileName"></div>
+            <div class="file-size" id="fileSize"></div>
+        </div>
+
+        <div class="button-group">
+            <button class="upload-btn" id="uploadBtn" disabled>Upload File</button>
+            <button class="clear-btn" id="clearBtn">Clear</button>
+        </div>
+
+        <div class="message" id="message"></div>
+    </div>
+
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const fileSize = document.getElementById('fileSize');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const message = document.getElementById('message');
+
+        let selectedFile = null;
+
+        // Click to select file
+        uploadArea.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        // File selection handler
+        fileInput.addEventListener('change', (e) => {
+            handleFile(e.target.files[0]);
+        });
+
+        // Drag and drop handlers
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const file = e.dataTransfer.files[0];
+            if (file && file.name.endsWith('.zip')) {
+                handleFile(file);
+            } else {
+                showMessage('Please select a valid zip file', 'error');
+            }
+        });
+
+        // Handle file selection
+        function handleFile(file) {
+            if (!file) return;
+
+            if (!file.name.endsWith('.zip')) {
+                showMessage('Please select a valid zip file', 'error');
+                return;
+            }
+
+            selectedFile = file;
+            fileName.textContent = `📦 ${file.name}`;
+            fileSize.textContent = `Size: ${formatFileSize(file.size)}`;
+            fileInfo.classList.add('active');
+            uploadBtn.disabled = false;
+            hideMessage();
+        }
+
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // Upload button click
+        uploadBtn.addEventListener('click', () => {
+            if (!selectedFile) return;
+
+            // Simulate upload (in a real app, you'd send this to a server)
+            uploadBtn.disabled = true;
+            uploadBtn.textContent = 'Uploading...';
+
+            // Create a download link for the file (simulating upload by downloading)
+            setTimeout(() => {
+                const url = URL.createObjectURL(selectedFile);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = selectedFile.name;
+                
+                showMessage(`✓ File "${selectedFile.name}" is ready! In a real implementation, this would be uploaded to a server.`, 'success');
+                uploadBtn.disabled = false;
+                uploadBtn.textContent = 'Upload File';
+            }, 1000);
+        });
+
+        // Clear button click
+        clearBtn.addEventListener('click', () => {
+            selectedFile = null;
+            fileInput.value = '';
+            fileInfo.classList.remove('active');
+            uploadBtn.disabled = true;
+            hideMessage();
+        });
+
+        // Show message
+        function showMessage(text, type) {
+            message.textContent = text;
+            message.className = `message ${type}`;
+        }
+
+        // Hide message
+        function hideMessage() {
+            message.className = 'message';
+        }
+    </script>
+</body>
+</html>
