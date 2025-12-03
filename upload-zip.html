@@ -205,7 +205,7 @@
             <div class="upload-icon">📁</div>
             <div class="upload-text">Tap to select a file</div>
             <div class="upload-hint">or drag and drop here</div>
-            <input type="file" id="fileInput" accept=".zip,application/zip,application/x-zip-compressed">
+            <input type="file" id="fileInput" accept=".zip,application/zip,application/x-zip-compressed,application/x-zip">
         </div>
 
         <div class="file-info" id="fileInfo">
@@ -268,10 +268,17 @@
         // Validate zip file by extension and MIME type
         function isValidZipFile(file) {
             const validExtension = file.name.endsWith('.zip');
-            const validMimeType = file.type === 'application/zip' || 
-                                   file.type === 'application/x-zip-compressed' ||
-                                   file.type === 'application/x-zip';
-            return validExtension && (validMimeType || file.type === '');
+            const validMimeTypes = [
+                'application/zip',
+                'application/x-zip-compressed',
+                'application/x-zip'
+            ];
+            // Require MIME type validation for better security
+            // Some browsers may not set MIME type, so we check both conditions
+            const hasMimeType = file.type !== '';
+            const validMimeType = validMimeTypes.includes(file.type);
+            
+            return validExtension && (!hasMimeType || validMimeType);
         }
 
         // Handle file selection
@@ -284,7 +291,9 @@
             }
 
             selectedFile = file;
-            fileName.textContent = `📦 ${file.name}`;
+            // Sanitize filename to prevent XSS
+            const safeFileName = file.name.replace(/[<>]/g, '');
+            fileName.textContent = `📦 ${safeFileName}`;
             fileSize.textContent = `Size: ${formatFileSize(file.size)}`;
             fileInfo.classList.add('active');
             uploadBtn.disabled = false;
@@ -313,7 +322,9 @@
             uploadBtn.textContent = 'Uploading...';
 
             setTimeout(() => {
-                showMessage(`✓ File "${selectedFile.name}" is ready! In a real implementation, this would be uploaded to a server.`, 'success');
+                // Sanitize filename to prevent XSS in message
+                const safeFileName = selectedFile.name.replace(/[<>]/g, '');
+                showMessage(`✓ File "${safeFileName}" is ready! In a real implementation, this would be uploaded to a server.`, 'success');
                 uploadBtn.disabled = false;
                 uploadBtn.textContent = 'Upload File';
             }, 1000);
