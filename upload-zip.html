@@ -276,8 +276,10 @@
             const validMimeType = validMimeTypes.includes(file.type);
             
             // For better security, we require both valid extension AND MIME type
-            // Note: Some legitimate file inputs may have empty MIME types depending on browser/OS
-            // If this is too restrictive, consider logging files with empty MIME types for review
+            // Note: Some browsers/OS may not set MIME type for legitimate files
+            // If validation is too strict for your use case, you can add:
+            // || (validExtension && file.type === '')
+            // But be aware this reduces security as files could bypass MIME validation
             return validExtension && validMimeType;
         }
 
@@ -301,7 +303,12 @@
 
         // Format file size
         function formatFileSize(bytes) {
+            // Handle invalid inputs
+            if (typeof bytes !== 'number' || bytes < 0 || !isFinite(bytes)) {
+                return 'Unknown';
+            }
             if (bytes === 0) return '0 Bytes';
+            
             const k = 1024;
             const sizes = ['Bytes', 'KB', 'MB', 'GB'];
             const i = Math.floor(Math.log(bytes) / Math.log(k));
